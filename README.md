@@ -5,7 +5,7 @@ Tavenem.DataStore.Marten
 
 [Tavenem.DataStore](https://github.com/Tavenem/DataStore) is a persistence-agnostic repository library. Its intended purpose is to help author libraries which need to interact with a project's data layer, while remaining fully decoupled from persistence choices.
 
-For example: you might want to author a library which can retrieve an object from the data store by ID, modify it, then update the item in the data store. You want your library to be useful to people who use [EntityFramework](https://docs.microsoft.com/en-us/ef/) to access a SQL database, people who use [Marten](https://martendb.io/) to access a PostgreSQL database, or people who work with [Azure Marten DB](https://azure.microsoft.com/en-us/services/cosmos-db/).
+For example: you might want to author a library which can retrieve an object from the data store by ID, modify it, then update the item in the data store. You want your library to be useful to people who use [EntityFramework](https://docs.microsoft.com/en-us/ef/) to access a SQL database, people who use [Marten](https://martendb.io/) to access a PostgreSQL database, or people who work with [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/).
 
 One possible solution might be to work with generic interfaces like [IQueryable](https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable), and provide event hooks so that implementers of your library are responsible for data retrieval and storage.
 
