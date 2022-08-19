@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.1-preview
+### Changed
+- Clarify 1-based indexing of page numbers in `IPagedList`.
+
 ## 0.32.0-preview - 0.34.0-preview
 ### Updated
 - Update dependencies

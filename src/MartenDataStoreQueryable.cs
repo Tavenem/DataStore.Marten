@@ -1,7 +1,7 @@
 ﻿using Marten;
 using Marten.Pagination;
-using Tavenem.DataStorage.Marten;
 using System.Linq.Expressions;
+using Tavenem.DataStorage.Marten;
 
 namespace Tavenem.DataStorage;
 
@@ -259,7 +259,7 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
 
     /// <summary>
     /// Gets a number of items from this <see cref="IDataStoreQueryable{T}" /> equal to
-    /// <paramref name="pageSize" />, after skipping <paramref name="pageNumber" /> multiples of
+    /// <paramref name="pageSize" />, after skipping <paramref name="pageNumber" />-1 multiples of
     /// that amount.
     /// </summary>
     /// <param name="pageNumber">The current page number.</param>
@@ -276,7 +276,7 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
 
     /// <summary>
     /// Asynchronously gets a number of items from this <see cref="IDataStoreQueryable{T}"/>
-    /// equal to <paramref name="pageSize"/>, after skipping <paramref name="pageNumber"/>
+    /// equal to <paramref name="pageSize"/>, after skipping <paramref name="pageNumber"/>-1
     /// multiples of that amount.
     /// </summary>
     /// <param name="pageNumber">The current page number.</param>
