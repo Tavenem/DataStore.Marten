@@ -6,13 +6,9 @@ namespace Tavenem.DataStorage.Marten;
 /// <summary>
 /// Provides LINQ operations on a <see cref="MartenDataStore"/>, after an ordering operation..
 /// </summary>
-public class OrderedMartenDataStoreQueryable<T> : MartenDataStoreQueryable<T>, IOrderedDataStoreQueryable<T>
+public class OrderedMartenDataStoreQueryable<T>(IQuerySession session, IOrderedQueryable<T> source)
+    : MartenDataStoreQueryable<T>(session, source), IOrderedDataStoreQueryable<T>
 {
-    /// <summary>
-    /// Initializes a new instance of <see cref="OrderedMartenDataStoreQueryable{T}"/>.
-    /// </summary>
-    public OrderedMartenDataStoreQueryable(IQuerySession session, IOrderedQueryable<T> source) : base(session, source) { }
-
     /// <summary>
     /// Performs a subsequent ordering of the elements in this <see
     /// cref="IOrderedDataStoreQueryable{T}"/> in the given order.
@@ -27,6 +23,6 @@ public class OrderedMartenDataStoreQueryable<T> : MartenDataStoreQueryable<T>, I
     /// </returns>
     public IOrderedDataStoreQueryable<T> ThenBy<TKey>(Expression<Func<T, TKey>> keySelector, bool descending = false)
         => descending
-            ? new OrderedMartenDataStoreQueryable<T>(_session, ((IOrderedQueryable<T>)_source).ThenByDescending(keySelector))
-            : new OrderedMartenDataStoreQueryable<T>(_session, ((IOrderedQueryable<T>)_source).ThenBy(keySelector));
+        ? new OrderedMartenDataStoreQueryable<T>(_session, ((IOrderedQueryable<T>)_source).ThenByDescending(keySelector))
+        : new OrderedMartenDataStoreQueryable<T>(_session, ((IOrderedQueryable<T>)_source).ThenBy(keySelector));
 }

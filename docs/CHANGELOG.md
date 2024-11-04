@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0
+### Changed
+- Update dependencies
+- Implement new interface API
+- Update to .NET 8
+
 ## 0.34.1-preview
 ### Changed
 - Clarify 1-based indexing of page numbers in `IPagedList`.

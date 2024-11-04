@@ -1,6 +1,7 @@
 ﻿using Marten;
 using Marten.Pagination;
 using System.Linq.Expressions;
+using System.Text.Json.Serialization.Metadata;
 using Tavenem.DataStorage.Marten;
 
 namespace Tavenem.DataStorage;
@@ -8,19 +9,10 @@ namespace Tavenem.DataStorage;
 /// <summary>
 /// Provides LINQ operations on a <see cref="MartenDataStore"/>.
 /// </summary>
-public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
+public class MartenDataStoreQueryable<T>(IQuerySession session, IQueryable<T> source) : IDataStoreQueryable<T>
 {
-    private protected readonly IQuerySession _session;
-    private protected readonly IQueryable<T> _source;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="MartenDataStoreQueryable{T}"/>.
-    /// </summary>
-    public MartenDataStoreQueryable(IQuerySession session, IQueryable<T> source)
-    {
-        _session = session;
-        _source = source;
-    }
+    private protected readonly IQuerySession _session = session;
+    private protected readonly IQueryable<T> _source = source;
 
     /// <summary>
     /// Determines whether this <see cref="IDataStoreQueryable{T}"/> contains any elements.
@@ -109,18 +101,16 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
     /// operation.
     /// </summary>
     /// <returns>An <see cref="IAsyncEnumerable{T}" />.</returns>
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public async IAsyncEnumerable<T> AsAsyncEnumerable()
     {
         using (_session)
         {
-            foreach (var item in _source)
+            await foreach (var item in _source.ToAsyncEnumerable())
             {
                 yield return item;
             }
         }
     }
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
     /// <summary>
     /// Enumerates the results of this <see cref="IDataStoreQueryable{T}" />.
@@ -357,6 +347,20 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
         => new MartenDataStoreQueryable<TResult>(_session, _source.OfType<TResult>());
 
     /// <summary>
+    /// Filters the elements of this <see cref="IDataStoreQueryable{T}"/> based on a specified
+    /// type.
+    /// </summary>
+    /// <typeparam name="TResult">The type to filter the elements of the sequence
+    /// on.</typeparam>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// A collection that contains the elements from source that have type <typeparamref
+    /// name="TResult"/>.
+    /// </returns>
+    public IDataStoreQueryable<TResult> OfType<TResult>(JsonTypeInfo<TResult>? typeInfo = null)
+        => OfType<TResult>();
+
+    /// <summary>
     /// Sorts the elements of this <see cref="IDataStoreQueryable{T}" /> in ascending order
     /// according to a key.
     /// </summary>
@@ -387,6 +391,20 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
     /// <typeparam name="TResult">The type of the value returned by the function represented by
     /// selector.</typeparam>
     /// <param name="selector">A projection function to apply to each element.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IDataStoreQueryable{T}"/> whose elements are the result of invoking a
+    /// projection function on each element of this <see cref="IDataStoreQueryable{T}"/>.
+    /// </returns>
+    public IDataStoreQueryable<TResult> Select<TResult>(Expression<Func<T, TResult>> selector, JsonTypeInfo<TResult>? typeInfo = null)
+        => Select(selector);
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> into a new form.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value returned by the function represented by
+    /// selector.</typeparam>
+    /// <param name="selector">A projection function to apply to each element.</param>
     /// <returns>
     /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking a
     /// projection function on each element of this <see cref="IDataStoreQueryable{T}"/>.
@@ -401,6 +419,34 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
             }
         }
     }
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> into a new form.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value returned by the function represented by
+    /// selector.</typeparam>
+    /// <param name="selector">A projection function to apply to each element.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking a
+    /// projection function on each element of this <see cref="IDataStoreQueryable{T}"/>.
+    /// </returns>
+    public IDataStoreQueryable<TResult> SelectMany<TResult>(Expression<Func<T, IEnumerable<TResult>>> selector, JsonTypeInfo<TResult>? typeInfo = null)
+        => SelectMany(selector);
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> into a new form.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value returned by the function represented by
+    /// selector.</typeparam>
+    /// <param name="selector">A projection function to apply to each element.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking a
+    /// projection function on each element of this <see cref="IDataStoreQueryable{T}"/>.
+    /// </returns>
+    public IAsyncEnumerable<TResult> SelectAsync<TResult>(Func<T, ValueTask<TResult>> selector, JsonTypeInfo<TResult>? typeInfo = null)
+        => SelectAsync(selector);
 
     /// <summary>
     /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
@@ -447,6 +493,34 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
 
     /// <summary>
     /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
+    /// cref="IEnumerable{T}"/> and invokes a result selector function on each element therein.
+    /// The resulting values from each intermediate sequence are combined into a single,
+    /// one-dimensional sequence and returned.
+    /// </summary>
+    /// <typeparam name="TCollection">
+    /// The type of the intermediate elements collected by the function represented by
+    /// <paramref name="collectionSelector"/>.
+    /// </typeparam>
+    /// <typeparam name="TResult">The type of the elements of the resulting
+    /// sequence.</typeparam>
+    /// <param name="collectionSelector">A projection function to apply to each element of the
+    /// input sequence.</param>
+    /// <param name="resultSelector">A projection function to apply to each element of each
+    /// intermediate sequence.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IDataStoreQueryable{T}"/> whose elements are the result of invoking the
+    /// one-to-many projection function <paramref name="collectionSelector"/> on each element of
+    /// source and then mapping each of those sequence elements and their corresponding source
+    /// element to a result element.
+    /// </returns>
+    public IDataStoreQueryable<TResult> SelectMany<TCollection, TResult>(
+        Expression<Func<T, IEnumerable<TCollection>>> collectionSelector,
+        Expression<Func<T, TCollection, TResult>> resultSelector,
+        JsonTypeInfo<TResult>? typeInfo = null) => SelectMany(collectionSelector, resultSelector);
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
     /// cref="IEnumerable{T}"/> and combines the resulting sequences into one sequence.
     /// </summary>
     /// <typeparam name="TResult">
@@ -471,6 +545,23 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
             }
         }
     }
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
+    /// cref="IEnumerable{T}"/> and combines the resulting sequences into one sequence.
+    /// </summary>
+    /// <typeparam name="TResult">
+    /// The type of the elements of the sequence returned by the function represented by
+    /// <paramref name="selector"/>.
+    /// </typeparam>
+    /// <param name="selector">A projection function to apply to each element.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IDataStoreQueryable{T}"/> whose elements are the result of invoking a
+    /// one-to-many projection function on each element of the input sequence.
+    /// </returns>
+    public IAsyncEnumerable<TResult> SelectManyAsync<TResult>(Func<T, IAsyncEnumerable<TResult>> selector, JsonTypeInfo<TResult>? typeInfo = null)
+        => SelectManyAsync(selector);
 
     /// <summary>
     /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
@@ -526,6 +617,34 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
     /// input sequence.</param>
     /// <param name="resultSelector">A projection function to apply to each element of each
     /// intermediate sequence.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking the
+    /// one-to-many projection function <paramref name="collectionSelector"/> on each element of
+    /// source and then mapping each of those sequence elements and their corresponding source
+    /// element to a result element.
+    /// </returns>
+    public IAsyncEnumerable<TResult> SelectManyAsync<TCollection, TResult>(
+        Func<T, IEnumerable<TCollection>> collectionSelector,
+        Func<T, TCollection, ValueTask<TResult>> resultSelector,
+        JsonTypeInfo<TResult>? typeInfo = null) => SelectManyAsync(collectionSelector, resultSelector);
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
+    /// cref="IEnumerable{T}"/> and invokes a result selector function on each element therein.
+    /// The resulting values from each intermediate sequence are combined into a single,
+    /// one-dimensional sequence and returned.
+    /// </summary>
+    /// <typeparam name="TCollection">
+    /// The type of the intermediate elements collected by the function represented by
+    /// <paramref name="collectionSelector"/>.
+    /// </typeparam>
+    /// <typeparam name="TResult">The type of the elements of the resulting
+    /// sequence.</typeparam>
+    /// <param name="collectionSelector">A projection function to apply to each element of the
+    /// input sequence.</param>
+    /// <param name="resultSelector">A projection function to apply to each element of each
+    /// intermediate sequence.</param>
     /// <returns>
     /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking the
     /// one-to-many projection function <paramref name="collectionSelector"/> on each element of
@@ -547,6 +666,34 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
             }
         }
     }
+
+    /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
+    /// cref="IEnumerable{T}"/> and invokes a result selector function on each element therein.
+    /// The resulting values from each intermediate sequence are combined into a single,
+    /// one-dimensional sequence and returned.
+    /// </summary>
+    /// <typeparam name="TCollection">
+    /// The type of the intermediate elements collected by the function represented by
+    /// <paramref name="collectionSelector"/>.
+    /// </typeparam>
+    /// <typeparam name="TResult">The type of the elements of the resulting
+    /// sequence.</typeparam>
+    /// <param name="collectionSelector">A projection function to apply to each element of the
+    /// input sequence.</param>
+    /// <param name="resultSelector">A projection function to apply to each element of each
+    /// intermediate sequence.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking the
+    /// one-to-many projection function <paramref name="collectionSelector"/> on each element of
+    /// source and then mapping each of those sequence elements and their corresponding source
+    /// element to a result element.
+    /// </returns>
+    public IAsyncEnumerable<TResult> SelectManyAsync<TCollection, TResult>(
+        Func<T, IAsyncEnumerable<TCollection>> collectionSelector,
+        Func<T, TCollection, TResult> resultSelector,
+        JsonTypeInfo<TResult>? typeInfo = null) => SelectManyAsync(collectionSelector, resultSelector);
 
     /// <summary>
     /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
@@ -587,6 +734,34 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
     }
 
     /// <summary>
+    /// Projects each element of this <see cref="IDataStoreQueryable{T}"/> to an <see
+    /// cref="IEnumerable{T}"/> and invokes a result selector function on each element therein.
+    /// The resulting values from each intermediate sequence are combined into a single,
+    /// one-dimensional sequence and returned.
+    /// </summary>
+    /// <typeparam name="TCollection">
+    /// The type of the intermediate elements collected by the function represented by
+    /// <paramref name="collectionSelector"/>.
+    /// </typeparam>
+    /// <typeparam name="TResult">The type of the elements of the resulting
+    /// sequence.</typeparam>
+    /// <param name="collectionSelector">A projection function to apply to each element of the
+    /// input sequence.</param>
+    /// <param name="resultSelector">A projection function to apply to each element of each
+    /// intermediate sequence.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>
+    /// An <see cref="IAsyncEnumerable{T}"/> whose elements are the result of invoking the
+    /// one-to-many projection function <paramref name="collectionSelector"/> on each element of
+    /// source and then mapping each of those sequence elements and their corresponding source
+    /// element to a result element.
+    /// </returns>
+    public IAsyncEnumerable<TResult> SelectManyAsync<TCollection, TResult>(
+        Func<T, IAsyncEnumerable<TCollection>> collectionSelector,
+        Func<T, TCollection, ValueTask<TResult>> resultSelector,
+        JsonTypeInfo<TResult>? typeInfo = null) => SelectManyAsync(collectionSelector, resultSelector);
+
+    /// <summary>
     /// Bypasses a specified number of elements in a sequence and then returns the remaining
     /// elements.
     /// </summary>
@@ -620,7 +795,7 @@ public class MartenDataStoreQueryable<T> : IDataStoreQueryable<T>
     {
         using (_session)
         {
-            return _source.ToList();
+            return [.. _source];
         }
     }
 

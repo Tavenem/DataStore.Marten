@@ -1,5 +1,6 @@
 ﻿using LazyCache;
 using Marten;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Tavenem.DataStorage.Marten;
 
@@ -7,7 +8,8 @@ namespace Tavenem.DataStorage.Marten;
 /// A data store for <see cref="IIdItem"/> instances backed by a Marten implementation of
 /// PostgreSQL.
 /// </summary>
-public class MartenDataStore : IDataStore
+/// <param name="documentStore">The <see cref="IDocumentStore"/> used for all transactions.</param>
+public class MartenDataStore(IDocumentStore documentStore) : IDataStore
 {
     private readonly IAppCache _cache = new CachingService();
 
@@ -24,7 +26,7 @@ public class MartenDataStore : IDataStore
     /// <summary>
     /// The <see cref="IDocumentStore"/> used for all transactions.
     /// </summary>
-    public IDocumentStore DocumentStore { get; set; }
+    public IDocumentStore DocumentStore { get; set; } = documentStore;
 
     /// <summary>
     /// <para>
@@ -36,12 +38,6 @@ public class MartenDataStore : IDataStore
     /// </para>
     /// </summary>
     public bool SupportsCaching => true;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="MartenDataStore"/>.
-    /// </summary>
-    /// <param name="documentStore">The <see cref="IDocumentStore"/> used for all transactions.</param>
-    public MartenDataStore(IDocumentStore documentStore) => DocumentStore = documentStore;
 
     /// <summary>
     /// Creates a new <see cref="IIdItem.Id"/> for an <see cref="IIdItem"/> of the given type.
@@ -84,8 +80,9 @@ public class MartenDataStore : IDataStore
     /// <remarks>
     /// This presumes that <paramref name="id"/> is a unique key, and therefore returns only one
     /// result. If your persistence model allows for non-unique keys and multiple results, use
-    /// an appropriately formed <see cref="Query{T}"/>.
+    /// an appropriately formed <see cref="Query{T}()"/>.
     /// </remarks>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
     public T? GetItem<T>(string? id, TimeSpan? cacheTimeout = null) where T : class, IIdItem
     {
         if (string.IsNullOrEmpty(id))
@@ -103,6 +100,26 @@ public class MartenDataStore : IDataStore
     }
 
     /// <summary>
+    /// Gets the <see cref="IIdItem"/> with the given <paramref name="id"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of <see cref="IIdItem"/> to retrieve.</typeparam>
+    /// <param name="id">The unique id of the item to retrieve.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <param name="cacheTimeout">
+    /// If this item is cached, this value (if supplied) will override <see cref="DefaultCacheTimeout"/>.
+    /// </param>
+    /// <returns>The item with the given id, or <see langword="null"/> if no item was found with
+    /// that id.</returns>
+    /// <remarks>
+    /// This presumes that <paramref name="id"/> is a unique key, and therefore returns only one
+    /// result. If your persistence model allows for non-unique keys and multiple results, use
+    /// an appropriately formed <see cref="Query{T}(JsonTypeInfo{T})"/>.
+    /// </remarks>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
+    public T? GetItem<T>(string? id, JsonTypeInfo<T>? typeInfo, TimeSpan? cacheTimeout) where T : class, IIdItem
+        => GetItem<T>(id, cacheTimeout);
+
+    /// <summary>
     /// Gets the <see cref="IdItem"/> with the given <paramref name="id"/>.
     /// </summary>
     /// <typeparam name="T">The type of <see cref="IdItem"/> to retrieve.</typeparam>
@@ -116,18 +133,32 @@ public class MartenDataStore : IDataStore
     {
         if (string.IsNullOrEmpty(id))
         {
-            return default!;
+            return default;
         }
         return await _cache.GetOrAddAsync(
             id,
             async () =>
             {
-                using var session = DocumentStore.LightweightSession();
+                await using var session = DocumentStore.LightweightSession();
                 return await session.LoadAsync<T>(id).ConfigureAwait(false);
             },
             cacheTimeout ?? DefaultCacheTimeout)
             .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Gets the <see cref="IdItem"/> with the given <paramref name="id"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of <see cref="IdItem"/> to retrieve.</typeparam>
+    /// <param name="id">The unique id of the item to retrieve.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <param name="cacheTimeout">
+    /// If this item is cached, this value (if supplied) will override <see cref="DefaultCacheTimeout"/>.
+    /// </param>
+    /// <returns>The item with the given id, or <see langword="null"/> if no item was found with
+    /// that id.</returns>
+    public ValueTask<T?> GetItemAsync<T>(string? id, JsonTypeInfo<T>? typeInfo, TimeSpan? cacheTimeout) where T : class, IIdItem
+        => GetItemAsync<T>(id, cacheTimeout);
 
     /// <summary>
     /// Gets an <see cref="IDataStoreQueryable{T}"/> of the given type of item.
@@ -147,6 +178,20 @@ public class MartenDataStore : IDataStore
     }
 
     /// <summary>
+    /// Gets an <see cref="IDataStoreQueryable{T}"/> of the given type of item.
+    /// </summary>
+    /// <typeparam name="T">The type of item to query.</typeparam>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <returns>An <see cref="IDataStoreQueryable{T}"/> of the given type of item.</returns>
+    /// <remarks>
+    /// This creates an <see cref="IQuerySession"/> which is disposed only when calling a method
+    /// of <see cref="MartenDataStoreQueryable{T}"/> which does not itself return another
+    /// instance of <see cref="MartenDataStoreQueryable{T}"/>. Ensure that you invoke such a
+    /// method to properly dispose of the session.
+    /// </remarks>
+    public IDataStoreQueryable<T> Query<T>(JsonTypeInfo<T>? typeInfo) where T : class, IIdItem => Query<T>();
+
+    /// <summary>
     /// Removes the stored item with the given id.
     /// </summary>
     /// <typeparam name="T">The type of items to remove.</typeparam>
@@ -163,6 +208,7 @@ public class MartenDataStore : IDataStore
     /// <see langword="true"/> if the item was successfully removed; otherwise <see
     /// langword="false"/>.
     /// </returns>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
     public bool RemoveItem<T>(string? id) where T : class, IIdItem
     {
         if (string.IsNullOrEmpty(id))
@@ -192,6 +238,7 @@ public class MartenDataStore : IDataStore
     /// <see langword="true"/> if the item was successfully removed; otherwise <see
     /// langword="false"/>.
     /// </returns>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
     public bool RemoveItem<T>(T? item) where T : class, IIdItem
     {
         if (item is null)
@@ -227,7 +274,7 @@ public class MartenDataStore : IDataStore
         {
             return false;
         }
-        using var session = DocumentStore.LightweightSession();
+        await using var session = DocumentStore.LightweightSession();
         session.Delete<T>(id);
         await session.SaveChangesAsync().ConfigureAwait(false);
         return true;
@@ -256,7 +303,7 @@ public class MartenDataStore : IDataStore
         {
             return true;
         }
-        using var session = DocumentStore.LightweightSession();
+        await using var session = DocumentStore.LightweightSession();
         session.Delete(item);
         await session.SaveChangesAsync().ConfigureAwait(false);
         return true;
@@ -279,6 +326,7 @@ public class MartenDataStore : IDataStore
     /// to indicate that the operation did not fail (even though no storage operation took
     /// place, neither did any failure).
     /// </remarks>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
     public bool StoreItem<T>(T? item, TimeSpan? cacheTimeout = null) where T : class, IIdItem
     {
         if (item is null)
@@ -293,6 +341,28 @@ public class MartenDataStore : IDataStore
 
         return true;
     }
+
+    /// <summary>
+    /// Upserts the given <paramref name="item"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of <see cref="IIdItem"/> to upsert.</typeparam>
+    /// <param name="item">The item to store.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <param name="cacheTimeout">
+    /// If this item is cached, this value (if supplied) will override <see cref="DefaultCacheTimeout"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the item was successfully persisted to the data store;
+    /// otherwise <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// If the item is <see langword="null"/>, does nothing and returns <see langword="true"/>,
+    /// to indicate that the operation did not fail (even though no storage operation took
+    /// place, neither did any failure).
+    /// </remarks>
+    [Obsolete("All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent")]
+    public bool StoreItem<T>(T? item, JsonTypeInfo<T>? typeInfo, TimeSpan? cacheTimeout) where T : class, IIdItem
+        => StoreItem(item, cacheTimeout);
 
     /// <summary>
     /// Upserts the given <paramref name="item"/>.
@@ -317,7 +387,7 @@ public class MartenDataStore : IDataStore
         {
             return true;
         }
-        using var session = DocumentStore.LightweightSession();
+        await using var session = DocumentStore.LightweightSession();
         session.Store(item);
         await session.SaveChangesAsync().ConfigureAwait(false);
 
@@ -325,4 +395,25 @@ public class MartenDataStore : IDataStore
 
         return true;
     }
+
+    /// <summary>
+    /// Upserts the given <paramref name="item"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of <see cref="IIdItem"/> to upsert.</typeparam>
+    /// <param name="item">The item to store.</param>
+    /// <param name="typeInfo">Ignored. Marten does not support <see cref="JsonTypeInfo{T}"/>.</param>
+    /// <param name="cacheTimeout">
+    /// If this item is cached, this value (if supplied) will override <see cref="DefaultCacheTimeout"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the item was successfully persisted to the data store;
+    /// otherwise <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// If the item is <see langword="null"/>, does nothing and returns <see langword="true"/>,
+    /// to indicate that the operation did not fail (even though no storage operation took
+    /// place, neither did any failure).
+    /// </remarks>
+    public Task<bool> StoreItemAsync<T>(T? item, JsonTypeInfo<T>? typeInfo, TimeSpan? cacheTimeout) where T : class, IIdItem
+        => StoreItemAsync(item, cacheTimeout);
 }
