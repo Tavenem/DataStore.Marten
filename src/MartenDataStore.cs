@@ -12,10 +12,8 @@ namespace Tavenem.DataStorage.Marten;
 /// <param name="cacheOptions">The options of the in-memory cache.</param>
 public class MartenDataStore(
     IDocumentStore documentStore,
-    IOptions<MemoryCacheOptions>? cacheOptions = null) : MartenDataStore<string, IIdItem>(documentStore), IIdItemDataStore
+    IOptions<MemoryCacheOptions>? cacheOptions = null) : MartenDataStore<string, IIdItem>(documentStore, cacheOptions), IIdItemDataStore
 {
-    private readonly MemoryCache _cache = new(cacheOptions ?? new MemoryCacheOptions());
-
     /// <inheritdoc />
     public override string? CreateNewIdFor<T>() => Guid.NewGuid().ToString();
 

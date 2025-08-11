@@ -46,16 +46,6 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// <inheritdoc />
     public IDataStore Provider => store;
 
-    /// <inheritdoc />
-    public async ValueTask<TResult> AverageAsync<TResult>(
-        Expression<Func<TSource, TResult?>> selector,
-        CancellationToken cancellationToken = default) where TResult : INumberBase<TResult>
-#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
-        // the user is expected to deal with the resulting exception.
-        => TResult.CreateChecked(await source.AverageAsync(selector, cancellationToken));
-#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-
     /// <summary>
     /// Determines whether a sequence contains any elements.
     /// </summary>
@@ -78,6 +68,16 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// </returns>
     public async ValueTask<bool> AnyAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken)
         => await source.AnyAsync(predicate, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<TResult> AverageAsync<TResult>(
+        Expression<Func<TSource, TResult?>> selector,
+        CancellationToken cancellationToken = default) where TResult : INumberBase<TResult>
+#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
+        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
+        // the user is expected to deal with the resulting exception.
+        => TResult.CreateChecked(await source.AverageAsync(selector, cancellationToken));
+#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
 
     /// <summary>
     /// Returns the number of elements in this source.
@@ -139,50 +139,6 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     public async ValueTask<TSource?> FirstOrDefaultAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         => await source.FirstOrDefaultAsync(predicate, cancellationToken);
 
-    /// <summary>
-    /// Returns the number of elements in this source.
-    /// </summary>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
-    /// <returns>The number of elements in the this source.</returns>
-    /// <exception cref="OverflowException">
-    /// The number of elements in this source is larger than <see cref="long.MaxValue"/>.
-    /// </exception>
-    public async ValueTask<long> LongCountAsync(CancellationToken cancellationToken)
-        => await source.CountAsync(cancellationToken);
-
-    /// <summary>
-    /// Returns the number of elements in this source that satisfy a condition.
-    /// </summary>
-    /// <param name="predicate">A function to test each element for a condition.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
-    /// <returns>The number of elements in the this source.</returns>
-    /// <exception cref="OverflowException">
-    /// The number of elements in this source that satisfy the condition is larger than <see
-    /// cref="long.MaxValue"/>.
-    /// </exception>
-    public async ValueTask<long> LongCountAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken)
-        => await source.CountAsync(predicate, cancellationToken);
-
-    /// <inheritdoc />
-    public async ValueTask<TResult?> MaxAsync<TResult>(
-        Expression<Func<TSource, TResult>> selector,
-        CancellationToken cancellationToken)
-#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
-        // the user is expected to deal with the resulting exception.
-        => await source.MaxAsync(selector, cancellationToken);
-#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-
-    /// <inheritdoc />
-    public async ValueTask<TResult?> MinAsync<TResult>(
-        Expression<Func<TSource, TResult>> selector,
-        CancellationToken cancellationToken = default)
-#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
-        // the user is expected to deal with the resulting exception.
-        => await source.MinAsync(selector, cancellationToken);
-#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
-
     /// <inheritdoc />
     IAsyncEnumerator<TSource> IAsyncEnumerable<TSource>.GetAsyncEnumerator(CancellationToken cancellationToken)
         => source.ToAsyncEnumerable(cancellationToken).GetAsyncEnumerator(cancellationToken);
@@ -205,6 +161,50 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
         int pageSize,
         CancellationToken cancellationToken = default)
         => (await source.ToPagedListAsync(pageNumber, pageSize, cancellationToken)).AsPagedList();
+
+    /// <summary>
+    /// Returns the number of elements in this source.
+    /// </summary>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
+    /// <returns>The number of elements in the this source.</returns>
+    /// <exception cref="OverflowException">
+    /// The number of elements in this source is larger than <see cref="long.MaxValue"/>.
+    /// </exception>
+    public async ValueTask<long> LongCountAsync(CancellationToken cancellationToken)
+        => await source.LongCountAsync(cancellationToken);
+
+    /// <summary>
+    /// Returns the number of elements in this source that satisfy a condition.
+    /// </summary>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/>.</param>
+    /// <returns>The number of elements in the this source.</returns>
+    /// <exception cref="OverflowException">
+    /// The number of elements in this source that satisfy the condition is larger than <see
+    /// cref="long.MaxValue"/>.
+    /// </exception>
+    public async ValueTask<long> LongCountAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken)
+        => await source.LongCountAsync(predicate, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<TResult?> MaxAsync<TResult>(
+        Expression<Func<TSource, TResult>> selector,
+        CancellationToken cancellationToken)
+#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
+        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
+        // the user is expected to deal with the resulting exception.
+        => await source.MaxAsync(selector, cancellationToken);
+#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
+
+    /// <inheritdoc />
+    public async ValueTask<TResult?> MinAsync<TResult>(
+        Expression<Func<TSource, TResult>> selector,
+        CancellationToken cancellationToken = default)
+#pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
+        // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
+        // the user is expected to deal with the resulting exception.
+        => await source.MinAsync(selector, cancellationToken);
+#pragma warning restore CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
 
     /// <inheritdoc />
     public IOrderedDataStoreQueryable<TSource> Order(IComparer<TSource>? comparer = null)
