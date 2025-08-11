@@ -54,7 +54,7 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// <see langword="true"/> if the source sequence contains any elements; otherwise, <see
     /// langword="false"/>.
     /// </returns>
-    public async ValueTask<bool> AnyAsync(CancellationToken cancellationToken)
+    public async ValueTask<bool> AnyAsync(CancellationToken cancellationToken = default)
         => await source.AnyAsync(cancellationToken);
 
     /// <summary>
@@ -87,7 +87,7 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// <exception cref="OverflowException">
     /// The number of elements in this source is larger than <see cref="int.MaxValue"/>.
     /// </exception>
-    public async ValueTask<int> CountAsync(CancellationToken cancellationToken)
+    public async ValueTask<int> CountAsync(CancellationToken cancellationToken = default)
         => await source.CountAsync(cancellationToken);
 
     /// <summary>
@@ -170,7 +170,7 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// <exception cref="OverflowException">
     /// The number of elements in this source is larger than <see cref="long.MaxValue"/>.
     /// </exception>
-    public async ValueTask<long> LongCountAsync(CancellationToken cancellationToken)
+    public async ValueTask<long> LongCountAsync(CancellationToken cancellationToken = default)
         => await source.LongCountAsync(cancellationToken);
 
     /// <summary>
@@ -183,13 +183,13 @@ public class MartenDataStoreQueryable<TItem, TSource>(MartenDataStore<TItem> sto
     /// The number of elements in this source that satisfy the condition is larger than <see
     /// cref="long.MaxValue"/>.
     /// </exception>
-    public async ValueTask<long> LongCountAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken)
+    public async ValueTask<long> LongCountAsync(Expression<Func<TSource, bool>> predicate, CancellationToken cancellationToken = default)
         => await source.LongCountAsync(predicate, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<TResult?> MaxAsync<TResult>(
         Expression<Func<TSource, TResult>> selector,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
 #pragma warning disable CS8714 // The type cannot be used as type parameter in the generic type or method. Nullability of type argument doesn't match 'notnull' constraint.
         // Suppressed to implement interface successfully. If the relaxed type constraint results in a runtime failure,
         // the user is expected to deal with the resulting exception.
