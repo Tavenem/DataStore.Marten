@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0
+## 2.0-preview.1
 ### Changed
 - Update to .NET 10
 - The original `MartenDataStore` has been divided into three separate implementations:

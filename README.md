@@ -17,9 +17,11 @@ Tavenem.DataStore.Marten is available as a [NuGet package](https://www.nuget.org
 
 ## Roadmap
 
-Tavenem.DataStore.Marten is currently in a **prerelease** state. Development is ongoing, and breaking changes are possible before the first production release.
+New versions of Tavenem.DataStore.Marten should be expected whenever the API surface of the Tavenem [DataStore library](https://github.com/Tavenem/DataStore) receives an update.
 
-No release date is currently set for v1.0 of Tavenem.DataStore.Marten. The project is currently in a "wait and see" phase while its utility, completeness, and correctness are evaluated. When the project is judged to be in a satisfactory state, and further breaking changes to the interface are determined to be unlikely, a production release will be made.
+There is a preview release available now.
+
+Other updates to resolve bugs or add new features may occur at any time.
 
 ## Contributing
 
