@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Tavenem.DataStorage.Marten</RootNamespace>
@@ -29,10 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LazyCache" Version="2.4.0" />
-    <PackageReference Include="Marten" Version="7.31.2" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="Tavenem.DataStore" Version="2.0.4" />
+    <PackageReference Include="Marten" Version="8.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
+    <PackageReference Include="Tavenem.DataStore" Version="3.1.27-preview-0011" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,4 @@
-﻿using MartenPagination = Marten.Pagination;
-
-namespace Tavenem.DataStorage.Marten;
+﻿namespace Tavenem.DataStorage.Marten;
 
 /// <summary>
 /// Extension methods.
@@ -8,11 +6,14 @@ namespace Tavenem.DataStorage.Marten;
 public static class DataStorageMartenExtensions
 {
     /// <summary>
-    /// Returns a <see cref="IPagedList{T}"/> wrapper for the Marten implementation.
+    /// Converts the Marten implementation of a <see
+    /// cref="global::Marten.Pagination.IPagedList{T}"/> into a <see cref="PagedList{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of items in the collection.</typeparam>
-    /// <param name="pagedList">The Marten <see cref="MartenPagination.IPagedList{T}"/>.</param>
-    /// <returns>An <see cref="IPagedList{T}"/> containing the items in the current collection.</returns>
-    public static IPagedList<T> AsPagedList<T>(this MartenPagination.IPagedList<T> pagedList)
-        => new MartenPagedListWrapper<T>(pagedList);
+    /// <param name="pagedList">The Marten <c>Marten.Pagination.IPagedList{T}</c>.</param>
+    /// <returns>
+    /// A <see cref="PagedList{T}"/> containing the items in the current collection.
+    /// </returns>
+    public static PagedList<T> AsPagedList<T>(this global::Marten.Pagination.IPagedList<T> pagedList)
+        => pagedList.AsPagedList(pagedList.PageNumber, pagedList.PageSize, pagedList.TotalItemCount);
 }
